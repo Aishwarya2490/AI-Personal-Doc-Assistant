@@ -8,7 +8,7 @@ router = APIRouter(
     tags=["Upload"]
 )
 
-ALLOWED_EXTENSIONS = {"pdf", "docx", "xlsx", "pptx", "txt"}
+ALLOWED_EXTENSIONS = {"pdf", "txt"}
 MAX_FILE_SIZE = 10 * 1024 * 1024 # 10MB limit
 
 @router.post("/")

@@ -1,7 +1,7 @@
 import os
 import shutil
 from fastapi import UploadFile
-from langchain_community.document_loaders import UnstructuredFileLoader
+from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 UPLOAD_DIR = "uploads"
@@ -23,8 +23,12 @@ class DocumentProcessor:
         return file_path
 
     def extract_and_chunk(self, file_path: str):
-        # Using unstructured to parse the document
-        loader = UnstructuredFileLoader(file_path)
+        if file_path.lower().endswith('.pdf'):
+            loader = PyPDFLoader(file_path)
+        else:
+            # Fallback to TextLoader
+            loader = TextLoader(file_path, autodetect_encoding=True)
+            
         documents = loader.load()
         
         # Chunking strategy

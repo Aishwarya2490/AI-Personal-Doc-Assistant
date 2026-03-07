@@ -3,7 +3,7 @@ import aiohttp
 import json
 import os
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://localhost:8005"
 TEST_FILE_PATH = "test_document.txt"
 TEST_UNALLOWED_FILE_PATH = "test_script.exe"
 
