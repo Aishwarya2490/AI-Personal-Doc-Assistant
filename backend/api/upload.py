@@ -28,13 +28,19 @@ async def upload_document(
     
     try:
         # Save file
+        print(f"[DEBUG] Saving file: {file.filename}")
         file_path = await document_processor.save_uploaded_file(file)
+        print(f"[DEBUG] File saved to: {file_path}")
         
         # Process and chunk file
+        print(f"[DEBUG] Extracting and chunking: {file_path}")
         chunks = document_processor.extract_and_chunk(file_path)
+        print(f"[DEBUG] Generated {len(chunks)} chunks")
         
         # Add chunks to Vector Store (ChromaDB)
+        print(f"[DEBUG] Adding documents to vector store for user: {current_user['user_id']}")
         vector_store_service.add_documents(chunks, file.filename, current_user["user_id"])
+        print(f"[DEBUG] Successfully indexed {file.filename}")
         
         return {
             "message": "File processed and embedded successfully",
@@ -43,5 +49,8 @@ async def upload_document(
             "chunk_preview": [c.page_content[:100] for c in chunks[:2]] # preview first 2 chunks
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        print(f"[ERROR] Document processing failed: {str(e)}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to process document: {str(e)}")
 
