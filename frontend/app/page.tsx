@@ -52,7 +52,10 @@ export default function Home() {
                 body: formData.toString()
             });
 
-            if (!res.ok) throw new Error('Invalid credentials');
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.detail || 'Invalid credentials');
+            }
 
             const data = await res.json();
             setToken(data.access_token);
