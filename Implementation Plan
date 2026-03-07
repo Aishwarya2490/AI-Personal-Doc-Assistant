@@ -1,0 +1,84 @@
+# AskMyDocs Implementation Plan
+
+This document outlines the detailed architectural and implementation plan for **AskMyDocs**, a secure, AI-driven document intelligence assistant that uses Retrieval-Augmented Generation (RAG) to provide natural language answers from uploaded documents.
+
+## User Review Required
+
+> [!IMPORTANT]
+> - **LLM Provider Choice**: Do we want to proceed with OpenAI models (e.g., GPT-4o) and embeddings, or open-source alternatives (e.g., Llama 3 via Ollama) for strict data privacy/security requirements?
+> - **Vector Database**: Are we deploying this entirely locally/on-prem (e.g., using ChromaDB/Milvus/pgvector) or utilizing a managed cloud service (Pinecone, Weaviate Cloud)?
+> - **Cloud/Infrastructure**: What is the target deployment environment? (AWS, Azure, GCP, or On-Premises?)
+> - **Authentication**: Do we need to integrate with an existing Identity Provider (Active Directory, Okta, OAuth) or build a standalone auth system?
+
+## Proposed Architecture and Stack
+
+- **Frontend**: Next.js (React) with TailwindCSS for a highly responsive, modern chat interface and document upload portal.
+- **Backend API**: FastAPI (Python), chosen for its async capabilities and native integration with AI/ML ecosystems.
+- **RAG & Orchestration Pipeline**: LangChain or LlamaIndex to orchestrate document ingestion, chunking, and LLM communication.
+- **Vector Database**: Qdrant or ChromaDB for efficient semantic search.
+- **Storage**: Amazon S3 (or local file system depending on deployment) for raw document storage.
+- **Document Parsers**: `Unstructured.io` for robust parsing of PDFs, Word, Excel, and PPTX.
+
+## Detailed Implementation Steps
+
+### ✅ Phase 1: Foundation Setup & Architecture (Completed)
+**What we have to do:**
+Establish the project structure, repository setup, and core technology foundations for both frontend and backend.
+**How we will do it:**
+1.  **Repository Setup**: Create a monorepo or standard separate repos for frontend and backend.
+2.  **Backend Initialization**: Set up a FastAPI project with standard folders (`api`, `core`, `models`, `services`). Configure Docker for containerization.
+3.  **Frontend Initialization**: Bootstrap a Next.js application. Set up a modern design system using standard CSS/UI patterns (focus on a premium, clean layout for chat and doc uploads).
+
+### ✅ Phase 2: Document Ingestion & Processing Pipeline (Completed)
+**What we have to do:**
+Build the capability to upload heterogeneous file types (PDF, Docx, xlsx, pptx), extract their text reliably, and split the text into meaningful chunks.
+**How we will do it:**
+1.  **File Upload API**: Create a secure `/upload` endpoint in FastAPI that accepts multipart form data, validates file types, and securely stores the raw file.
+2.  **Text Extraction**: Integrate the `unstructured` Python library to parse the documents. Format-specific handling:
+    - *PDFs*: Extract text and tables.
+    - *Excel*: Convert tabular data to markdown or structured JSON for better LLM comprehension.
+    - *Word/PPTX*: Extract continuous text and slide notes.
+3.  **Chunking Strategy**: Implement a semantic or RecursiveCharacterTextSplitter (via LangChain). Ensure chunks overlap (e.g., 1000 characters with 200 overlap) to preserve context.
+
+### ✅ Phase 3: Embedding and Vector Storage (RAG Core) (Completed)
+**What we have to do:**
+Convert extracted document chunks into vector embeddings and store them in a Vector Database for semantic search.
+**How we will do it:**
+1.  **Embedding Generation**: Use an embedding model (e.g., OpenAI `text-embedding-3-small` or a HuggingFace BGE model) to compute vector representations of each chunk.
+2.  **Vector DB Integration**: Spin up a Vector DB (e.g., ChromaDB or pgvector). Create collections for the uploaded document batches.
+3.  **Metadata Tagging**: Store metadata alongside vectors (e.g., `filename`, `page_number`, `user_id`) to allow filtered search and accurate source citations over chunks.
+
+### ✅ Phase 4: Chat API & Retrieval-Augmented Generation (RAG) (Completed)
+**What we have to do:**
+Enable a conversational interface where users can ask questions about their documents and receive accurate, cited answers in real-time.
+**How we will do it:**
+1.  **Retrieval Mechanism**: Build a `/chat` endpoint. When a user asks a question, embed the query, perform a semantic similarity search in the Vector DB, and retrieve the top-K relevant chunks.
+2.  **Prompt Engineering**: Construct a precise system prompt. Inject the retrieved chunks into the LLM context window with instructions: "Answer the user's question using ONLY the provided context. If the answer is not in the context, state that you don't know and do not hallucinate."
+3.  **Streaming Response**: Utilize Server-Sent Events (SSE) in FastAPI to stream the LLM token response back to the frontend for a real-time conversational experience. Include source citations in the final payload.
+
+### ✅ Phase 5: Security and Access Control (Completed)
+**What we have to do:**
+Ensure that the app is enterprise-ready, with isolated data per user and secure authentication.
+**How we will do it:**
+1.  **Authentication**: Implement JWT-based auth via FastAPI OAuth2 or integrate standard OAuth providers.
+2.  **Data Isolation**: Modify the Vector DB queries to always filter by the authenticated `user_id` or `tenant_id` so users only query their own uploaded documents.
+3.  **File Security**: Enforce file size limits, virus scanning on upload, and secure presigned URLs for viewing documents.
+
+### ✅ Phase 6: Frontend Development (Modern UI/UX) (Completed)
+**What we have to do:**
+Create the interactive interfaces for document management and the conversational assistant.
+**How we will do it:**
+1.  **Dashboard**: Build a central hub to view uploaded documents, upload new ones via drag-and-drop, and manage files.
+2.  **Chat Interface**: Implement a sophisticated two-pane layout: Document viewer (left) and Chat interface (right). Handle loading states, streaming text rendering, and displaying clickable citations.
+3.  **Premium Aesthetics**: Apply modern, sleek design aesthetics (glassmorphism accents, smooth micro-animations, curated color palettes) to give the application a premium feel.
+
+## Verification Plan
+### Automated Tests
+- **Backend Unit Tests**: Pytest suite for the document ingestion service (ensuring different mock file types parse correctly into chunks).
+- **Integration Tests**: Test the `/upload` API and `/chat` retrieval mechanics against a local test vector DB.
+### Manual Verification
+- **E2E Workflow**: Boot up both Next.js and FastAPI servers locally. Ensure a user can:
+  1. Upload a complex PDF (e.g., with tables and text).
+  2. Ask a nuanced question regarding the uploaded PDF.
+  3. Receive a streamed response with an accurate citation pointing to the exact page/section of the PDF.
+- **UI Responsiveness Check**: Test the frontend layout on desktop and mobile viewports.
