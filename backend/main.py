@@ -1,4 +1,6 @@
+import os
 from dotenv import load_dotenv
+os.environ["ANONYMIZED_TELEMETRY"] = "False"
 load_dotenv()
 
 from fastapi import FastAPI
@@ -24,7 +26,13 @@ app.include_router(upload.router)
 app.include_router(chat.router)
 
 @app.get("/")
+@app.head("/")
 async def root():
     return {"message": "Welcome to AskMyDocs API"}
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
 
 
