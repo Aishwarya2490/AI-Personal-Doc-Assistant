@@ -3,3 +3,9 @@ __pycache__/
 *.pyc
 .env
 .pytest_cache/
+uploads/
+chroma_db/
+error_log.txt
+debug_chroma.py
+run_server.py
+verify_key.py
