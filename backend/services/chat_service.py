@@ -35,36 +35,42 @@ class ChatService:
         )
 
     async def stream_chat(self, question: str, user_id: str) -> AsyncGenerator[str, None]:
-        # 1. Retrieval Mechanism with Multi-Tenant Data Isolation
-        # Fetch relevant chunks from ChromaDB filtering by the specific user_id
-        docs = await self.vector_store.asimilarity_search(question, k=4, filter={"user_id": user_id})
-        context_str = self.format_docs_for_context(docs)
-        
-        # Prepare sources to send back to the frontend for UI citations
-        sources = [
-            {
-                "filename": doc.metadata.get("filename", "Unknown"),
-                "chunk_index": doc.metadata.get("chunk_index", "Unknown"),
-                "content_preview": doc.page_content[:150] + "..."
-            }
-            for doc in docs
-        ]
+        try:
+            # 1. Retrieval Mechanism with Multi-Tenant Data Isolation
+            # Fetch relevant chunks from ChromaDB filtering by the specific user_id
+            docs = await self.vector_store.asimilarity_search(question, k=4, filter={"user_id": user_id})
+            context_str = self.format_docs_for_context(docs)
+            
+            # Prepare sources to send back to the frontend for UI citations
+            sources = [
+                {
+                    "filename": doc.metadata.get("filename", "Unknown"),
+                    "chunk_index": doc.metadata.get("chunk_index", "Unknown"),
+                    "content_preview": doc.page_content[:150] + "..."
+                }
+                for doc in docs
+            ]
 
-        # 2. Prompt Engineering & Chain setup
-        chain = self.prompt | self.llm | StrOutputParser()
-        
-        # 3. Streaming Response via Server-Sent Events (SSE)
-        # Stream the LLM tokens
-        async for chunk in chain.astream({"context": context_str, "question": question}):
-            # Ensure the chunk is a string
-            content = str(chunk)
-            if content:
-                yield f"data: {json.dumps({'type': 'token', 'content': content})}\n\n"
-        
-        # Stream the citation sources after generation is complete
-        yield f"data: {json.dumps({'type': 'sources', 'content': sources})}\n\n"
-        
-        # Signal stream end
-        yield "data: [DONE]\n\n"
+            # 2. Prompt Engineering & Chain setup
+            chain = self.prompt | self.llm | StrOutputParser()
+            
+            # 3. Streaming Response via Server-Sent Events (SSE)
+            # Stream the LLM tokens
+            async for chunk in chain.astream({"context": context_str, "question": question}):
+                # Ensure the chunk is a string
+                content = str(chunk)
+                if content:
+                    yield f"data: {json.dumps({'type': 'token', 'content': content})}\n\n"
+            
+            # Stream the citation sources after generation is complete
+            yield f"data: {json.dumps({'type': 'sources', 'content': sources})}\n\n"
+            
+        except Exception as e:
+            error_msg = f"\n\n[SYSTEM ERROR]: {str(e)}"
+            yield f"data: {json.dumps({'type': 'token', 'content': error_msg})}\n\n"
+            
+        finally:
+            # Signal stream end
+            yield "data: [DONE]\n\n"
 
 chat_service = ChatService()
