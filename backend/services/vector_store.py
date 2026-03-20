@@ -1,5 +1,5 @@
 import os
-from langchain_openai import OpenAIEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from typing import List
@@ -9,8 +9,8 @@ os.makedirs(CHROMA_PERSIST_DIR, exist_ok=True)
 
 class VectorStoreService:
     def __init__(self):
-        # Using OpenAI embeddings to keep RAM usage low for Render Free Tier (512MB)
-        self.embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+        # Using Google embeddings
+        self.embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
         
         self.vector_store = Chroma(
             collection_name="askmydocs_collection",

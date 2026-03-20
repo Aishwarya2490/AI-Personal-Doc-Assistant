@@ -1,15 +1,15 @@
 import json
 from typing import AsyncGenerator
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from services.vector_store import vector_store_service
 
 class ChatService:
     def __init__(self):
-        # We assume OPENAI_API_KEY is available in the environment implicitly
+        # We assume GOOGLE_API_KEY is available in the environment implicitly
         # (Loaded via python-dotenv in production, or set in the shell)
-        self.llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0, streaming=True)
+        self.llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0, streaming=True)
         # Store vector store instance directly for dynamic filtering
         self.vector_store = vector_store_service.vector_store
         
