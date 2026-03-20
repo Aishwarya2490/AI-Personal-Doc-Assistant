@@ -56,7 +56,10 @@ class ChatService:
         # 3. Streaming Response via Server-Sent Events (SSE)
         # Stream the LLM tokens
         async for chunk in chain.astream({"context": context_str, "question": question}):
-            yield f"data: {json.dumps({'type': 'token', 'content': chunk})}\n\n"
+            # Ensure the chunk is a string
+            content = str(chunk)
+            if content:
+                yield f"data: {json.dumps({'type': 'token', 'content': content})}\n\n"
         
         # Stream the citation sources after generation is complete
         yield f"data: {json.dumps({'type': 'sources', 'content': sources})}\n\n"
