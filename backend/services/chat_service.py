@@ -9,7 +9,7 @@ class ChatService:
     def __init__(self):
         # We assume GOOGLE_API_KEY is available in the environment implicitly
         # (Loaded via python-dotenv in production, or set in the shell)
-        self.llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0, streaming=True)
+        self.llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0, streaming=True)
         # Store vector store instance directly for dynamic filtering
         self.vector_store = vector_store_service.vector_store
         
